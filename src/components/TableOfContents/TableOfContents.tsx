@@ -1,25 +1,55 @@
-import { FC } from 'react';
+import React, { FC, memo } from 'react';
+import { ContentItem } from './types/ContentItem';
 import { useTableOfContents } from './useTableOfContents';
 
 type TableOfContentsProps = ReturnType<typeof useTableOfContents>;
 
-// TODO: TableOfContents should render a hierarchical list of items
-//  item_1
-//      item_1_1
-//          item_1_1_1
-//      item_1_2
-//  item_2
-//  item_3
-//      item_3_1
-//  item_4
+const Item: FC<{
+    item: ContentItem;
+    childrenMap: Record<string, ContentItem[]>;
+    expanded: Set<string>;
+    toggleExpand: (itemId: string) => void;
+}> = memo(({ item, childrenMap, expanded, toggleExpand }) => {
+    const children = childrenMap[item.id] || [];
 
-export const TableOfContents: FC<TableOfContentsProps> = ({ items, onClick }) => (
-    <div>
-        {items.map((item) => (
-            <div key={item.id} style={{ display: 'flex' }}>
-                <div style={{ width: item.level * 20, height: 10 }} />
-                <button onClick={onClick(item)}>{item.name}</button>
-            </div>
-        ))}
-    </div>
-);
+    return (
+        <div style={{ marginLeft: 20 }}>
+            <button onClick={() => toggleExpand(item.id)}>{item.name}</button>
+            {expanded.has(item.id) &&
+                children.map((child) => (
+                    <Item
+                        key={child.id}
+                        item={child}
+                        childrenMap={childrenMap}
+                        expanded={expanded}
+                        toggleExpand={toggleExpand}
+                    />
+                ))}
+        </div>
+    );
+});
+
+export const TableOfContents: FC<TableOfContentsProps> = ({
+    items,
+    expanded,
+    toggleExpand,
+    expandAll,
+    closeAll,
+    childrenMap
+}) => {
+    return (
+        <div>
+            <button onClick={expandAll}>Expand All</button>
+            <button onClick={closeAll}>Close All</button>
+            {(childrenMap['root'] || []).map((item) => (
+                <Item
+                    key={item.id}
+                    item={item}
+                    childrenMap={childrenMap}
+                    expanded={expanded}
+                    toggleExpand={toggleExpand}
+                />
+            ))}
+        </div>
+    );
+};
